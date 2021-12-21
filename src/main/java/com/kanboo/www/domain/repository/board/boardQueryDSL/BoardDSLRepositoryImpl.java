@@ -29,6 +29,7 @@ public class BoardDSLRepositoryImpl implements BoardDSLRepository{
         QBoardReport reports = QBoardReport.boardReport;
         QMember member = QMember.member;
         QCodeDetail codeDetail = QCodeDetail.codeDetail;
+        QBoardFile boardFile = QBoardFile.boardFile;
 
         JPAQueryFactory query = new JPAQueryFactory(em);
 
@@ -54,6 +55,8 @@ public class BoardDSLRepositoryImpl implements BoardDSLRepository{
             .fetchJoin()
             .innerJoin(board.codeDetail, codeDetail)
             .fetchJoin()
+            .leftJoin(board.boardFile, boardFile)
+            .fetchJoin()
                 .where(
                     (JPAExpressions
                                     .select(reports.count())
@@ -66,7 +69,8 @@ public class BoardDSLRepositoryImpl implements BoardDSLRepository{
             )
             .distinct()
 
-            .offset(articleOnvView) .limit(5)
+            .offset(articleOnvView).limit(5)
+                .orderBy(board.boardIdx.desc())
             .fetch();
     }
 
@@ -92,6 +96,7 @@ public class BoardDSLRepositoryImpl implements BoardDSLRepository{
                 .from(board, member)
                 .where(board.codeDetail.codeDetailIdx.eq(codeDetails)
                         .and(board.member.memIdx.eq(member.memIdx))
+                        .and(board.delAt.eq("N"))
                         .and(booleanBuilder)
                         .and((JPAExpressions
                                 .select(reports.count())
@@ -119,7 +124,10 @@ public class BoardDSLRepositoryImpl implements BoardDSLRepository{
                         .where(comment.board.boardIdx.eq(boardIdx))
                         .offset(commentsOnView)
                         .limit(5)
+                        .orderBy(comment.answerIdx.desc())
                         .fetch();
     }
+
+
 
 }

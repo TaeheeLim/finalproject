@@ -10,4 +10,5 @@ import java.util.List;
 
 @Repository
 public interface BoardFileRepository extends JpaRepository<BoardFile, Long> {
+
 }

@@ -132,7 +132,6 @@ export default {
         ele: "insertImage",
         img: ""
       }
-      this.exportFile = files
       if(files && file) {
         const reader = new FileReader()
         reader.onload = readerEvt => {
@@ -142,15 +141,20 @@ export default {
         }
         reader.readAsBinaryString(file)
       }
+      this.exportFile = ''
+
     }
   },
   watch: {
     color() {
       this.btnClick('foreColor')
     },
+
     isExport() {
+
       this.exportC = document.querySelector('#content').innerHTML
       const returnData = {
+
         _data: this.exportC,
         _file: this.exportFile
       }

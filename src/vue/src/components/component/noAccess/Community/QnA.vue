@@ -1,9 +1,10 @@
 <template>
 <div @scroll="getArticle" class="router-wrapper">
     <div class="router-wrapper2">
-        <div class="board" v-for="(item, index) in this.boardList" :key="index">
+        <div v-for="(item, index) in this.boardList" :key="index">
           <div class="null-content" v-if="item.isNull">{{item.content}}</div>
           <div v-else>
+          <div class="board" v-if="item.delAt === 'N'">
             <div class="name-div">
                 <div>
                     <div>{{item.member.memNick}}</div>
@@ -18,7 +19,7 @@
                             v-if="this.updateCheck == false"></i>
                     </div>
                     <div class="icon-div">
-                        <i @click="deleteBoard(item)" class="far fa-trash-alt"></i>
+                        <i @click="confirmDelete(item)" class="far fa-trash-alt"></i>
                     </div>
                     <!-- 밑의 div에다가 update axios를 하는 메소드 이름을 @click에다가 추가-->
                 </div>
@@ -64,6 +65,7 @@
         <span id="goback">
             <button id="goback-btn" @click="backToFirst">처음으로</button>
         </span>
+        </div>
     </div>
 </div>
 </template>
@@ -74,7 +76,7 @@ import {  mapActions, mapMutations, mapState } from 'vuex'
 import editor from '../../global/editor.vue'
 
 export default {
-    name : 'Free',
+    name : 'qna',
 
     data(){
         return {
@@ -84,6 +86,7 @@ export default {
             isExport : 0,
             isReportClick : false,
             likeToggle : false,
+            isBoardNull: false
         }
     },
     computed : {
@@ -92,6 +95,7 @@ export default {
             updateCheck : state => state.community.updateCheck,
             numberOfArticle : state => state.community.numberOfArticle,
             articlesOnView : state => state.community.articlesOnView,
+            axiosState: state => state.community.axiosState
         })
     },
 
@@ -106,6 +110,7 @@ export default {
             changeIsUpdate : 'community/changeIsUpdate',
             changeBoardIsModify : 'community/changeBoardIsModify',
             changeUpdateCheck : 'community/changeUpdateCheck',
+            setAxiosState: 'community/setAxiosState'
         }),
 
         setLikeFlag(){
@@ -162,30 +167,42 @@ export default {
             this.isExport++
         },
 
-        getArticle(e){  
+        getArticle(e){
             if(this.articlesOnView === this.numberOfArticle) {
                 return
             }
-
-            const fullSroll = e.target.scrollHeight
+            const fullScroll = e.target.scrollHeight
             const nowScroll = e.target.scrollTop
+            const position = this.$route.fullPath.split('/')[2]
 
-            if((fullSroll - nowScroll) < (fullSroll / 1.5) && !this.axiosState) {
-                //원래는 이 부분에서 현재보여지는 게시글의 개수인 articlesOnView 같이 넘김
-                //Controller에서 보여지는 개시글의 개수를 받아서 jpa문법으로 페이징처리를 위함
-                //params : {articleNum : this.articleOnView}
-                this.getMoreList()
+            if((fullScroll - nowScroll) < (fullScroll / 1.5) && !this.axiosState) {
+                this.getMoreList(position)
             }
         },
-        //게시판 삭제
-        deleteBoard(item){
-            this.axios
-                .delete('', null, {params : {
-                                    board : item,
-                                    token : sessionStorage.getItem('token')}})
-                .then(() =>{})
-                .catch(() => {})
+        confirmDelete(item){
+          if (confirm("해당 게시글을 정말 삭제하시겠습니까?")){
+            this.deleteBoard(item)
+          }
         },
+
+        //게시판 삭제
+        // token : sessionStorage.getItem('token')
+        deleteBoard(item){
+          this.axios
+              .get('/DeleteBoard',{
+                        params : {
+                                  boardIdx : item.boardIdx,
+                        }})
+              .then(e =>{
+                if(e.data === true){
+                  item.delAt = 'Y'
+                } else {
+                  alert('삭제를 실패했습니다.')
+                }
+              })
+        },
+
+
         //게시판 수정
         updateBoard(item){
             this.axios
@@ -268,7 +285,7 @@ export default {
 }
 
 .content-div {
-    height: 300px;
+    height: fit-content;
     color: white;
     width: 100%;
 }
@@ -387,5 +404,10 @@ img {
 #goback-btn {
   color: #fff;
   padding: 5px;
+}
+
+.null-content {
+  font-size: 20px;
+  color: #fff;
 }
 </style>

@@ -3,19 +3,19 @@
   <div class="container">
     <div class="real-container"> 
       <div class="left-container">
-        <router-link @click="changeCodeDetail(1);
+        <router-link @click="changeCodeDetail(7);
                             emptyInputBox();
                             step=0;
-                            category='free';
+                            category='7';
                             "
                      class ="board-direction" to="/community/free">자유게시판</router-link>
-        <router-link @click="changeCodeDetail(33);
+        <router-link @click="changeCodeDetail(8);
                             emptyInputBox();
                             step=0;
-                            category='qna';
+                            category='8';
                             "
                      class ="board-direction" to="/community/qna">문의 게시판</router-link>
-        <button  @click="[click(), step=1, this.changeUpdateCheck()]" class="board-direction" :disabled="blockWrite == true">글 작성</button>
+        <button  @click="[changeWriteIsOpen(), step=1, this.changeUpdateCheck()]" class="board-direction" :disabled="blockWrite == true">글 작성</button>
       </div>
       <div class="input-container">
         <select v-model="selected" id="select" @change="sendingSelected">
@@ -29,7 +29,7 @@
     </div>  
     <div class="body-router">
       <div id="write-div">
-        <Write v-if="isOpen" 
+        <Write v-if="this.isOpen"
               :step="step" 
               :category="category"/>
       </div>
@@ -49,8 +49,8 @@ export default {
       key: "",
       selected : 'All',
       step : 0,
-      category : "free",
-      isOpen : false,
+      category : "7",
+      // isOpen : false,
     }
   },
 
@@ -64,6 +64,7 @@ export default {
       boardList : state => state.community.boardList,
       isSearch : state => state.community.isSearch,
       selected : state => state.community.selected,
+      isOpen : state => state.community.isOpen,
     })
   },
 
@@ -73,6 +74,7 @@ export default {
       getSelectedAndKey : 'community/getSelectedAndKey',
       changeCodeDetail : 'community/changeCodeDetail',
       resetData: 'community/resetData',
+      changeWriteIsOpen : 'community/changeWriteIsOpen',
     }),
 
     ...mapActions({
@@ -91,9 +93,10 @@ export default {
         "key" : this.key,
         "selected" : this.selected
       }
+      const position = this.$route.fullPath.split('/')[2]
       this.getSelectedAndKey(object)
-      this.getBoardNum()
-      this.getBoardList()
+      this.getBoardNum(position)
+      this.getBoardList(position)
     },
 
     emptyInputBox(){
@@ -106,8 +109,9 @@ export default {
       }
       this.getSelectedAndKey(object)
       this.resetData()
-      this.getBoardNum()
-      this.getBoardList()
+      this.getBoardNum(null)
+
+      this.getBoardList(null)
     },
 
   },
@@ -117,7 +121,9 @@ export default {
     }
   },
   mounted() {
-    this.getBoardList()
+    const position = this.$route.fullPath.split('/')[2]
+    this.getBoardList(position)
+    this.getBoardNum(position)
   }
 }
 </script>

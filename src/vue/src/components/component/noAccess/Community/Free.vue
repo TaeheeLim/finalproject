@@ -1,9 +1,10 @@
 <template>
 <div @scroll="getArticle" class="router-wrapper">
     <div class="router-wrapper2">
-        <div class="board" v-for="(item, index) in this.boardList" :key="index">
+        <div v-for="(item, index) in this.boardList" :key="index">
             <div class="null-content" v-if="item.isNull">{{item.content}}</div>
             <div v-else>
+            <div class="board" v-if="item.delAt==='N'">
             <div class="name-div">
                 <div>
                     <div>{{item.member.memNick}}</div>
@@ -11,14 +12,17 @@
                 </div>
                 <!-- 이 부분에다가 v-if로 토큰값 비교해서 작성자일 경우 수정,삭제 버튼.. 아닐경우 신고 버튼-->
                 <div class="icon-container" v-if="item.수정했니 === false">
+                    <div v-if="item.fileAt === 'Y'">
+                      <button id="file-btn">첨부파일: {{ item.fileName }}</button>
+                    </div>
                     <div class="icon-div">
-                        <i @click="this.changeBoardIsModify(item); 
+                        <i @click="this.changeBoardIsModify(item);
                                     this.changeIsUpdate(item);"
                                     class="fas fa-edit"
                             v-if="this.updateCheck == false"></i>
                     </div>
                     <div class="icon-div">
-                        <i @click="deleteBoard(item)" class="far fa-trash-alt"></i>
+                        <i @click="confirmDelete(item)" class="far fa-trash-alt"></i>
                     </div>
                     <!-- 밑의 div에다가 update axios를 하는 메소드 이름을 @click에다가 추가-->
                 </div>
@@ -34,8 +38,7 @@
                                     @click="exportFinish(item); increasingIsExportUpdate()">Finish
                 </div>
             </div>
-            <div class="content-div no-read-only" v-if="item.isModify == true">
-                {{ item.boardCn }}
+            <div class="content-div no-read-only" v-if="item.isModify == true" v-html="item.boardCn">
             </div>
 
             <div class="content-div read-only" v-if="item.isModify == false">
@@ -65,6 +68,7 @@
         <span id="goback">
           <button id="goback-btn" @click="backToFirst">처음으로</button>
         </span>
+        </div>
     </div>
 </div>
 </template>
@@ -80,7 +84,6 @@ export default {
     data(){
         return {
             updateContent : '',
-            axiosState : false,
             isUpdate : false,
             isExport : 0,
             isReportClick : false,
@@ -94,6 +97,7 @@ export default {
             updateCheck : state => state.community.updateCheck,
             numberOfArticle : state => state.community.numberOfArticle,
             articlesOnView : state => state.community.articlesOnView,
+            axiosState: state => state.community.axiosState
         })
     },
 
@@ -108,6 +112,7 @@ export default {
             changeIsUpdate : 'community/changeIsUpdate',
             changeBoardIsModify : 'community/changeBoardIsModify',
             changeUpdateCheck : 'community/changeUpdateCheck',
+            setAxiosState: 'community/setAxiosState'
         }),
 
         setLikeFlag(){
@@ -168,22 +173,36 @@ export default {
             if(this.articlesOnView === this.numberOfArticle) {
                 return
             }
-
-            const fullSroll = e.target.scrollHeight
+            const fullScroll = e.target.scrollHeight
             const nowScroll = e.target.scrollTop
+            const position = this.$route.fullPath.split('/')[2]
 
-            if((fullSroll - nowScroll) < (fullSroll / 1.5) && !this.axiosState) {
-                this.getMoreList()
+            if((fullScroll - nowScroll) < (fullScroll / 1.5) && !this.axiosState) {
+                this.getMoreList(position)
             }
         },
+
+        confirmDelete(item){
+          if (confirm("해당 게시글을 정말 삭제하시겠습니까?")){
+            this.deleteBoard(item)
+          }
+        },
+
         //게시판 삭제
+        // token : sessionStorage.getItem('token')
         deleteBoard(item){
             this.axios
-                .delete('', null, {params : {
-                                    board : item,
-                                    token : sessionStorage.getItem('token')}})
-                .then(() =>{})
-                .catch(() => {})
+                .get('/DeleteBoard',{
+                          params : {
+                                    boardIdx : item.boardIdx,
+                          }})
+                .then(e =>{
+                  if(e.data === true){
+                    item.delAt = 'Y'
+                  } else {
+                    alert('삭제를 실패했습니다.')
+                  }
+                })
         },
         //게시판 수정
         updateBoard(item){
@@ -218,14 +237,16 @@ export default {
         isExport(){
             let editor = document.querySelector('#content')
             let multipleFiles = document.querySelector('#multipleFiles')
-                if(editor){
-                    let _data = editor.innerHTML
-                    let _files = multipleFiles.files
-                    console.log(_data)
-                    console.log(_files)
-                }
+              if(editor){
+                  let _data = editor.innerHTML
+                  let _files = multipleFiles.files
+                  console.log(_data)
+                  console.log(_files)
+              }
         }
-    },
+
+
+        },
     
     Mounted() {
         this.getBoardNum()
@@ -267,7 +288,8 @@ export default {
 }
 
 .content-div {
-    height: 300px;
+    /*height: 300px;*/
+    height: fit-content;
     color: white;
     width: 100%;
 }

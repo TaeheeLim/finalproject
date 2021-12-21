@@ -25,6 +25,10 @@ public class MemberDTO {
     private String memPass;
     private RoleDto role;
 
+    public void changeMemberIdx(long memberIdx){
+        this.memIdx = memberIdx;
+    }
+
     public Member dtoToEntity() {
         return Member.builder()
                 .memIdx(memIdx)
